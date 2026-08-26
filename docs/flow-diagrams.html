@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NTP 对时流程 & 秒表状态机</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f5f5f5;
+    font-family: 'Geist', sans-serif;
+    color: #2d3142;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: 'Geist Mono', monospace;
+    font-size: 7px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7a8399;
+    margin-bottom: 0.25rem;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: #2d3142;
+    margin-bottom: 0.25rem;
+  }
+  h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: #2d3142;
+    margin-bottom: 0.25rem;
+    margin-top: 2.5rem;
+  }
+  .subtitle {
+    font-family: 'Geist', sans-serif;
+    font-size: 0.875rem;
+    color: #4f5d75;
+    margin-bottom: 1.5rem;
+  }
+  .diagram-container {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid rgba(45,49,66,0.12);
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+  .card .eyebrow { margin-bottom: 0.5rem; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .card-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .card-dot.coral { background: #eb6c36; }
+  .card-dot.ink { background: #2d3142; }
+  .card-dot.muted { background: #4f5d75; }
+  .card h3 {
+    font-family: 'Geist', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .card ul {
+    list-style: none;
+    font-size: 0.8rem;
+    color: #4f5d75;
+    line-height: 1.6;
+  }
+  .card li::before {
+    content: "→ ";
+    color: #bfc0c0;
+  }
+  .card pre {
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.75rem;
+    color: #4f5d75;
+    background: rgba(45,49,66,0.03);
+    padding: 0.75rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+  }
+  footer {
+    border-top: 1px solid rgba(45,49,66,0.10);
+    padding-top: 1rem;
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.7rem;
+    color: #7a8399;
+  }
+</style>
+</head>
+<body>
+  <p class="eyebrow">SEQUENCE &amp; STATE</p>
+  <h1>关键流程图</h1>
+  <p class="subtitle">NTP 对时序列图 + 秒表状态机 + 时间源数据流</p>
+
+  <!-- ============ NTP SEQUENCE DIAGRAM ============ -->
+  <h2>NTP 对时序列</h2>
+  <p class="subtitle">用户触发测量 → 并发查询 10 个服务器 → 更新 UI</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 880 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="seq-title seq-desc">
+      <title id="seq-title">NTP 对时序列图</title>
+      <desc id="seq-desc">展示用户点击测量按钮后，SyncView 调用 NTPManager 并发查询多个 NTP 服务器，计算偏差并更新界面的完整流程</desc>
+
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+        </marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/>
+        </marker>
+        <marker id="arrow-ret" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#7a8399"/>
+        </marker>
+      </defs>
+
+      <rect width="880" height="520" fill="#f5f5f5"/>
+
+      <!-- Lifelines -->
+      <!-- User -->
+      <text x="80" y="32" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">User</text>
+      <rect x="56" y="36" width="48" height="28" rx="6" fill="#f5f5f5"/>
+      <rect x="56" y="36" width="48" height="28" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="0.8"/>
+      <line x1="80" y1="64" x2="80" y2="500" stroke="#bfc0c0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- SyncView -->
+      <text x="256" y="32" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">SyncView</text>
+      <rect x="216" y="36" width="80" height="28" rx="6" fill="#f5f5f5"/>
+      <rect x="216" y="36" width="80" height="28" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <line x1="256" y1="64" x2="256" y2="500" stroke="#bfc0c0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- NTPManager -->
+      <text x="456" y="32" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTPManager</text>
+      <rect x="408" y="36" width="96" height="28" rx="6" fill="#f5f5f5"/>
+      <rect x="408" y="36" width="96" height="28" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <line x1="456" y1="64" x2="456" y2="500" stroke="#bfc0c0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- NTPClient -->
+      <text x="640" y="32" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTPClient</text>
+      <rect x="600" y="36" width="80" height="28" rx="6" fill="#f5f5f5"/>
+      <rect x="600" y="36" width="80" height="28" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <line x1="640" y1="64" x2="640" y2="500" stroke="#bfc0c0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- NTP Server -->
+      <text x="808" y="32" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTP Server</text>
+      <rect x="760" y="36" width="96" height="28" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <line x1="808" y1="64" x2="808" y2="500" stroke="#bfc0c0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- Messages -->
+      <!-- 1. User clicks -->
+      <line x1="80" y1="96" x2="256" y2="96" stroke="#eb6c36" stroke-width="1" marker-end="url(#arrow-accent)"/>
+      <rect x="120" y="82" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="156" y="91" fill="rgba(235,108,54,0.8)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">点击 测量</text>
+
+      <!-- 2. SyncView -> NTPManager -->
+      <line x1="256" y1="128" x2="456" y2="128" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <rect x="300" y="114" width="100" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="350" y="123" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">measureAll()</text>
+
+      <!-- 3. Activation bar on NTPManager -->
+      <rect x="450" y="128" width="12" height="340" rx="2" fill="rgba(235,108,54,0.12)" stroke="#eb6c36" stroke-width="0.6"/>
+
+      <!-- 4. isMeasuring = true -->
+      <rect x="268" y="148" width="176" height="16" rx="3" fill="rgba(235,108,54,0.06)"/>
+      <text x="356" y="160" fill="rgba(235,108,54,0.7)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">isMeasuring = true</text>
+
+      <!-- 5. TaskGroup: for each server -->
+      <rect x="244" y="176" width="396" height="224" rx="4" fill="none" stroke="#4f5d75" stroke-width="0.8" stroke-dasharray="5,4"/>
+      <rect x="252" y="172" width="88" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="296" y="181" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TaskGroup ×10</text>
+
+      <!-- 6. measure(server, rounds=3) -->
+      <line x1="456" y1="208" x2="640" y2="208" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <rect x="496" y="194" width="112" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="552" y="203" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">measure(srv, 3)</text>
+
+      <!-- 7. query() -->
+      <line x1="640" y1="240" x2="808" y2="240" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+      <rect x="680" y="226" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="720" y="235" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">UDP query</text>
+
+      <!-- 8. NTP response -->
+      <line x1="808" y1="272" x2="640" y2="272" stroke="#2e5aa8" stroke-width="0.8" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+      <rect x="680" y="258" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="728" y="267" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">48-byte resp</text>
+
+      <!-- 9. Calculate offset -->
+      <rect x="604" y="288" width="72" height="28" rx="3" fill="rgba(45,49,66,0.03)"/>
+      <text x="640" y="300" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">offset =</text>
+      <text x="640" y="312" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">(Δt₁+Δt₂)/2</text>
+
+      <!-- 10. Return measurement -->
+      <line x1="640" y1="332" x2="462" y2="332" stroke="#7a8399" stroke-width="0.8" stroke-dasharray="5,4" marker-end="url(#arrow-ret)"/>
+      <rect x="500" y="318" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="548" y="327" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">NTPMeasurement</text>
+
+      <!-- 11. Repeat ×3 -->
+      <rect x="612" y="352" width="56" height="16" rx="3" fill="rgba(45,49,66,0.03)"/>
+      <text x="640" y="364" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">×3 rounds</text>
+
+      <!-- 12. Median -->
+      <rect x="604" y="376" width="72" height="16" rx="3" fill="rgba(45,49,66,0.05)"/>
+      <text x="640" y="388" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">median(offset)</text>
+
+      <!-- End of group -->
+      <rect x="444" y="408" width="148" height="16" rx="3" fill="rgba(45,49,66,0.03)"/>
+      <text x="518" y="420" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">measurements[id] = m</text>
+
+      <!-- 13. Update UI -->
+      <rect x="268" y="436" width="176" height="16" rx="3" fill="rgba(235,108,54,0.06)"/>
+      <text x="356" y="448" fill="rgba(235,108,54,0.7)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">isMeasuring = false</text>
+
+      <rect x="268" y="460" width="176" height="16" rx="3" fill="rgba(45,49,66,0.03)"/>
+      <text x="356" y="472" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">correctedOffset = m.offset</text>
+
+      <!-- 14. Return to view -->
+      <line x1="456" y1="488" x2="256" y2="488" stroke="#7a8399" stroke-width="0.8" stroke-dasharray="5,4" marker-end="url(#arrow-ret)"/>
+      <rect x="312" y="474" width="88" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="356" y="483" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">@Published→UI</text>
+    </svg>
+  </div>
+
+  <!-- ============ STOPWATCH STATE MACHINE ============ -->
+  <h2>秒表状态机</h2>
+  <p class="subtitle">PrecisionTimer 的状态转换与时间累积逻辑</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="state-title state-desc">
+      <title id="state-title">秒表状态机</title>
+      <desc id="state-desc">PrecisionTimer 的三个状态（idle, running, paused）之间的转换，以及每个状态下的时间累积逻辑</desc>
+
+      <defs>
+        <marker id="s-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+        <marker id="s-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+        </marker>
+      </defs>
+
+      <rect width="880" height="380" fill="#f5f5f5"/>
+
+      <!-- Initial state -->
+      <circle cx="80" cy="160" r="10" fill="#2d3142"/>
+      <circle cx="80" cy="160" r="14" fill="none" stroke="#2d3142" stroke-width="1.2"/>
+
+      <!-- Arrow to Idle -->
+      <line x1="94" y1="160" x2="160" y2="160" stroke="#4f5d75" stroke-width="1" marker-end="url(#s-arrow)"/>
+
+      <!-- State: Idle -->
+      <rect x="164" y="128" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="164" y="128" width="160" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1.2"/>
+      <text x="244" y="152" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Idle</text>
+      <text x="244" y="172" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">elapsedTime = 0</text>
+      <text x="244" y="184" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">accumulatedTime = 0</text>
+
+      <!-- Idle → Running -->
+      <path d="M 324,152 H 420 Q 428,152 428,144 V 128 Q 428,120 436,120 H 496" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#s-arrow-accent)"/>
+      <rect x="348" y="108" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="388" y="117" fill="rgba(235,108,54,0.8)" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">start()</text>
+
+      <!-- Guard label -->
+      <rect x="348" y="122" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="384" y="131" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">startTime=now</text>
+
+      <!-- State: Running -->
+      <rect x="500" y="88" width="192" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="500" y="88" width="192" height="80" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="596" y="112" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Running</text>
+      <text x="596" y="132" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">elapsed = accumulated</text>
+      <text x="596" y="144" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">+ (now - startTime)</text>
+      <text x="596" y="160" fill="rgba(235,108,54,0.6)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">⟳ 120fps refresh</text>
+
+      <!-- Running → Paused -->
+      <path d="M 596,168 V 200 Q 596,208 588,208 H 420 Q 412,208 412,216 V 240" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+      <rect x="444" y="196" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="480" y="205" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">stop()</text>
+
+      <!-- Guard label -->
+      <rect x="420" y="210" width="120" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="480" y="219" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">accumulated += elapsed</text>
+
+      <!-- State: Paused -->
+      <rect x="332" y="244" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="332" y="244" width="160" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1.2"/>
+      <text x="412" y="268" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Paused</text>
+      <text x="412" y="288" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">elapsed = accumulated</text>
+      <text x="412" y="300" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">startTime = nil</text>
+
+      <!-- Paused → Running (resume) -->
+      <path d="M 492,268 H 612 Q 620,268 620,260 V 172" fill="none" stroke="#eb6c36" stroke-width="1" marker-end="url(#s-arrow-accent)"/>
+      <rect x="516" y="256" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="556" y="265" fill="rgba(235,108,54,0.8)" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">start()</text>
+
+      <!-- Paused → Idle (reset) -->
+      <path d="M 332,288 H 252 Q 244,288 244,280 V 196" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+      <rect x="256" y="276" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="288" y="285" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">reset()</text>
+
+      <!-- Running → Idle (reset) -->
+      <path d="M 692,128 H 780 Q 788,128 788,136 V 340 Q 788,348 780,348 H 252 Q 244,348 244,340 V 196" fill="none" stroke="#4f5d75" stroke-width="0.8" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+      <rect x="496" y="336" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="528" y="345" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">reset()</text>
+
+      <!-- Running self-loop: lap() -->
+      <path d="M 660,88 Q 660,60 700,60 Q 740,60 740,88" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#s-arrow)"/>
+      <rect x="672" y="48" width="56" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="700" y="57" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">lap()</text>
+      <rect x="660" y="36" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="700" y="45" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">laps.append(t)</text>
+
+      <!-- Legend -->
+      <line x1="32" y1="368" x2="848" y2="368" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="378" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <line x1="104" y1="374" x2="140" y2="374" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="148" y="378" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">State change</text>
+      <line x1="260" y1="374" x2="296" y2="374" stroke="#4f5d75" stroke-width="1"/>
+      <text x="304" y="378" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Transition</text>
+      <line x1="400" y1="374" x2="436" y2="374" stroke="#4f5d75" stroke-width="0.8" stroke-dasharray="5,4"/>
+      <text x="444" y="378" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Reset</text>
+      <circle cx="532" cy="374" r="5" fill="#2d3142"/>
+      <circle cx="532" cy="374" r="8" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+      <text x="548" y="378" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Initial</text>
+    </svg>
+  </div>
+
+  <!-- ============ TIME SOURCE DATA FLOW ============ -->
+  <h2>时间源数据流</h2>
+  <p class="subtitle">三个页面的时间来源与精度对比</p>
+
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">TIME SOURCES</p>
+      <div class="card-header">
+        <span class="card-dot coral"></span>
+        <h3>三种时间源</h3>
+      </div>
+      <ul>
+        <li><strong>数字时钟</strong>: Date() → 1ms 刷新 → = 系统时间</li>
+        <li><strong>模拟时钟</strong>: Date() → 10ms 刷新 → = 系统时间</li>
+        <li><strong>NTP 校准</strong>: Date() - offset → NTP 标准时间</li>
+      </ul>
+      <pre>
+底层: Date() → gettimeofday()
+            → mach_absolute_time()
+            → 内核时钟 (所有页面共用)
+
+差异仅在:
+  刷新频率 (1ms vs 10ms vs 120fps)
+  显示精度 (秒 vs 毫秒 vs 纳秒)
+  校准偏差 (NTP offset)
+      </pre>
+    </div>
+    <div class="card">
+      <p class="eyebrow">PRECISION LIMITS</p>
+      <div class="card-header">
+        <span class="card-dot ink"></span>
+        <h3>精度瓶颈分析</h3>
+      </div>
+      <ul>
+        <li>Timer.publish 精度: ±5ms（受系统调度）</li>
+        <li>CADisplayLink: 与屏幕帧率同步 (±0ms)</li>
+        <li>DateFormatter: ~1ms 格式化开销</li>
+        <li>SwiftUI 渲染: ~1-3ms 管线延迟</li>
+        <li>NTP 网络: ±10-50ms（取决于网络）</li>
+      </ul>
+      <pre>
+实际精度链:
+  gettimeofday()  ~0.001ms  ← 最精确
+  Date()           ~0.001ms
+  Timer trigger    ~5ms      ← 瓶颈
+  Format+Render    ~3ms
+  ─────────────────────
+  用户看到         ~8ms 延迟
+      </pre>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">NTP PROTOCOL</p>
+      <div class="card-header">
+        <span class="card-dot muted"></span>
+        <h3>NTP 报文解析</h3>
+      </div>
+      <pre>
+ 48 字节 NTP v4 请求/响应:
+
+ Byte 0:  [LI:2][VN:3=4][Mode:3=3] = 0x23
+ Byte 1-39: 零填充
+ Byte 40-47: Transmit Timestamp
+             (64-bit, NTP epoch 1900)
+
+ 时间转换:
+   ntp_seconds - 2208988800 = unix_seconds
+   (2208988800 = 1900→1970 的秒数差)
+      </pre>
+    </div>
+    <div class="card">
+      <p class="eyebrow">OFFSET ALGORITHM</p>
+      <div class="card-header">
+        <span class="card-dot coral"></span>
+        <h3>NTP 偏差计算</h3>
+      </div>
+      <pre>
+ t₁ = 发送请求时间 (客户端)
+ t₂ = 接收请求时间 (服务器)
+ t₃ = 发送响应时间 (服务器)
+ t₄ = 接收响应时间 (客户端)
+
+ offset = ((t₂-t₁) + (t₃-t₄)) / 2
+ rtt    = (t₄-t₁) - (t₃-t₂)
+
+ 多次测量取中位数 → 更准确
+ 5 rounds × median → 最终 offset
+      </pre>
+    </div>
+  </div>
+
+  <footer>
+    PrecisionClock Key Flows · NTP Sequence + Stopwatch State Machine + Time Source Data Flow · Updated 2024
+  </footer>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrecisionClock 架构图</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f5f5f5;
+    font-family: 'Geist', sans-serif;
+    color: #2d3142;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: 'Geist Mono', monospace;
+    font-size: 7px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7a8399;
+    margin-bottom: 0.25rem;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: #2d3142;
+    margin-bottom: 0.25rem;
+  }
+  .subtitle {
+    font-family: 'Geist', sans-serif;
+    font-size: 0.875rem;
+    color: #4f5d75;
+    margin-bottom: 2rem;
+  }
+  .diagram-container {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 0.9fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid rgba(45,49,66,0.12);
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+  .card .eyebrow { margin-bottom: 0.5rem; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .card-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .card-dot.coral { background: #eb6c36; }
+  .card-dot.ink { background: #2d3142; }
+  .card-dot.muted { background: #4f5d75; }
+  .card h3 {
+    font-family: 'Geist', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .card ul {
+    list-style: none;
+    font-size: 0.8rem;
+    color: #4f5d75;
+    line-height: 1.6;
+  }
+  .card li::before {
+    content: "→ ";
+    color: #bfc0c0;
+  }
+  footer {
+    border-top: 1px solid rgba(45,49,66,0.10);
+    padding-top: 1rem;
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.7rem;
+    color: #7a8399;
+  }
+</style>
+</head>
+<body>
+  <p class="eyebrow">ARCHITECTURE</p>
+  <h1>PrecisionClock 系统架构</h1>
+  <p class="subtitle">跨平台 SwiftUI 高精度时钟应用 — 视图层 / 业务层 / 系统层</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 880 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="arch-title arch-desc">
+      <title id="arch-title">PrecisionClock 系统架构图</title>
+      <desc id="arch-desc">展示 PrecisionClock 应用的三层架构：视图层（4个Tab页面）、业务层（ObservableObject状态管理）、系统层（时间源和网络通信）</desc>
+
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+        </marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/>
+        </marker>
+      </defs>
+
+      <!-- Background -->
+      <rect width="880" height="620" fill="#f5f5f5"/>
+
+      <!-- ===== Zone: View Layer ===== -->
+      <rect x="32" y="32" width="816" height="196" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="44" y="36" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="80" y="45" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">VIEW LAYER</text>
+
+      <!-- ContentView / TabView -->
+      <rect x="340" y="60" width="200" height="44" rx="6" fill="#f5f5f5"/>
+      <rect x="340" y="60" width="200" height="44" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="348" y="66" width="52" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="374" y="75" fill="rgba(235,108,54,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENTRY</text>
+      <text x="440" y="82" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ContentView</text>
+      <text x="440" y="96" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">TabView × 4 tabs</text>
+
+      <!-- Arrows from ContentView to 4 views -->
+      <path d="M 370,104 V 116 Q 370,124 362,124 H 128 Q 120,124 120,132 V 148" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+      <path d="M 410,104 V 116 Q 410,124 402,124 H 328 Q 320,124 320,132 V 148" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+      <path d="M 470,104 V 116 Q 470,124 478,124 H 536 Q 544,124 544,132 V 148" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+      <path d="M 510,104 V 116 Q 510,124 518,124 H 748 Q 756,124 756,132 V 148" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+
+      <!-- ClockView -->
+      <rect x="56" y="152" width="144" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="56" y="152" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="128" y="180" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">数字时钟</text>
+      <text x="128" y="196" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ClockView</text>
+
+      <!-- AnalogClockView -->
+      <rect x="256" y="152" width="144" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="256" y="152" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="328" y="180" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">模拟时钟</text>
+      <text x="328" y="196" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">AnalogClockView</text>
+
+      <!-- StopwatchView -->
+      <rect x="472" y="152" width="144" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="472" y="152" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="544" y="180" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">秒表</text>
+      <text x="544" y="196" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">StopwatchView</text>
+
+      <!-- SyncView -->
+      <rect x="680" y="152" width="144" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="680" y="152" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="752" y="180" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTP 对时</text>
+      <text x="752" y="196" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">SyncView</text>
+
+      <!-- ===== Zone: Business Layer ===== -->
+      <rect x="32" y="260" width="816" height="160" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="44" y="264" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="92" y="273" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">BUSINESS</text>
+
+      <!-- Timer.publish (ClockView + Analog) -->
+      <rect x="56" y="296" width="160" height="52" rx="6" fill="#f5f5f5"/>
+      <rect x="56" y="296" width="160" height="52" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="64" y="302" width="44" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="86" y="311" fill="rgba(79,93,117,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TIMER</text>
+      <text x="136" y="324" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Timer.publish</text>
+      <text x="136" y="340" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">every: 0.001s / 0.01s</text>
+
+      <!-- PrecisionTimer -->
+      <rect x="432" y="296" width="160" height="52" rx="6" fill="#f5f5f5"/>
+      <rect x="432" y="296" width="160" height="52" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="440" y="302" width="56" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.40)" stroke-width="0.8"/>
+      <text x="468" y="311" fill="rgba(235,108,54,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OBJ-C</text>
+      <text x="512" y="324" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PrecisionTimer</text>
+      <text x="512" y="340" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CADisplayLink / Timer</text>
+
+      <!-- NTPManager -->
+      <rect x="680" y="296" width="144" height="52" rx="6" fill="#f5f5f5"/>
+      <rect x="680" y="296" width="144" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="688" y="302" width="40" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="708" y="311" fill="rgba(45,49,66,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">VM</text>
+      <text x="752" y="324" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTPManager</text>
+      <text x="752" y="340" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">@StateObject</text>
+
+      <!-- Arrows: views to business -->
+      <path d="M 128,216 V 296" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+      <path d="M 328,216 V 240 Q 328,248 320,248 H 144 Q 136,248 136,256 V 296" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+      <path d="M 544,216 V 296" fill="none" stroke="#eb6c36" stroke-width="1" marker-end="url(#arrow-accent)"/>
+      <path d="M 752,216 V 296" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+
+      <!-- Arrow labels -->
+      <rect x="108" y="244" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="128" y="253" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">onReceive</text>
+
+      <rect x="520" y="244" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="544" y="253" fill="rgba(235,108,54,0.8)" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">@Observed</text>
+
+      <rect x="728" y="244" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="752" y="253" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">@Observed</text>
+
+      <!-- @Published annotation -->
+      <rect x="432" y="360" width="160" height="44" rx="6" fill="#f5f5f5"/>
+      <rect x="432" y="360" width="160" height="44" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,3"/>
+      <text x="512" y="378" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">@Published</text>
+      <text x="512" y="392" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">elapsedTime, isRunning</text>
+
+      <path d="M 512,348 V 360" fill="none" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+      <!-- ===== Zone: System Layer ===== -->
+      <rect x="32" y="452" width="816" height="140" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="44" y="456" width="80" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="84" y="465" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SYSTEM</text>
+
+      <!-- Date() / gettimeofday -->
+      <rect x="56" y="488" width="200" height="52" rx="6" fill="#f5f5f5"/>
+      <rect x="56" y="488" width="200" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="64" y="494" width="48" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="88" y="503" fill="rgba(45,49,66,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">KERNEL</text>
+      <text x="156" y="516" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Date()</text>
+      <text x="156" y="532" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">gettimeofday / mach_abs</text>
+
+      <!-- NTPClient -->
+      <rect x="620" y="488" width="200" height="52" rx="6" fill="#f5f5f5"/>
+      <rect x="620" y="488" width="200" height="52" rx="6" fill="rgba(45,49,66,0.03)" stroke="#2e5aa8" stroke-width="1"/>
+      <rect x="628" y="494" width="28" height="12" rx="2" fill="transparent" stroke="rgba(46,90,168,0.40)" stroke-width="0.8"/>
+      <text x="642" y="503" fill="rgba(46,90,168,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">UDP</text>
+      <text x="720" y="516" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">NTPClient</text>
+      <text x="720" y="532" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">NWConnection :123</text>
+
+      <!-- Arrows: business to system -->
+      <path d="M 136,348 V 380 Q 136,388 144,388 H 148 Q 156,388 156,396 V 488" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+
+      <path d="M 512,348 V 424 Q 512,432 504,432 H 164 Q 156,432 156,440 V 488" fill="none" stroke="#4f5d75" stroke-width="0.8" marker-end="url(#arrow)"/>
+
+      <path d="M 752,348 V 380 Q 752,388 744,388 H 728 Q 720,388 720,396 V 488" fill="none" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+
+      <!-- Arrow labels -->
+      <rect x="132" y="424" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="156" y="433" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">Date()</text>
+
+      <rect x="696" y="424" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="720" y="433" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">async</text>
+
+      <!-- External: NTP Servers (cloud) -->
+      <rect x="660" y="564" width="120" height="36" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="720" y="582" fill="#4f5d75" font-size="12" font-weight="500" font-family="'Geist', sans-serif" text-anchor="middle">NTP 服务器 ×10</text>
+      <text x="720" y="594" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">time.apple.com ...</text>
+
+      <path d="M 720,540 V 564" fill="none" stroke="#2e5aa8" stroke-width="0.8" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+      <rect x="696" y="548" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="720" y="557" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">UDP:123</text>
+
+      <!-- Legend -->
+      <line x1="32" y1="608" x2="848" y2="608" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="618" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="104" y="611" width="12" height="8" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8"/>
+      <text x="124" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Focal</text>
+      <rect x="180" y="611" width="12" height="8" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/>
+      <text x="200" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Component</text>
+      <rect x="280" y="611" width="12" height="8" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+      <text x="300" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Store</text>
+      <rect x="356" y="611" width="12" height="8" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="0.8"/>
+      <text x="376" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">External</text>
+      <line x1="444" y1="615" x2="468" y2="615" stroke="#4f5d75" stroke-width="1"/>
+      <text x="476" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Data</text>
+      <line x1="520" y1="615" x2="544" y2="615" stroke="#2e5aa8" stroke-width="1"/>
+      <text x="552" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Network</text>
+      <line x1="620" y1="615" x2="644" y2="615" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,3"/>
+      <text x="652" y="618" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Async</text>
+    </svg>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">DATA FLOW</p>
+      <div class="card-header">
+        <span class="card-dot coral"></span>
+        <h3>单向数据流</h3>
+      </div>
+      <ul>
+        <li>系统时钟 → Date() → @Published</li>
+        <li>@Published → SwiftUI 自动刷新 View</li>
+        <li>View 仅读取，不修改数据源</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">CROSS-PLATFORM</p>
+      <div class="card-header">
+        <span class="card-dot ink"></span>
+        <h3>跨平台策略</h3>
+      </div>
+      <ul>
+        <li>iOS: CADisplayLink 120fps</li>
+        <li>macOS: Timer 120Hz</li>
+        <li>仅 PrecisionTimer 需要条件编译</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">NETWORK</p>
+      <div class="card-header">
+        <span class="card-dot muted"></span>
+        <h3>NTP 通信</h3>
+      </div>
+      <ul>
+        <li>NWConnection UDP 端口 123</li>
+        <li>10 个可选时钟源，多次测量取中位数</li>
+        <li>标准 NTP v4 算法计算偏差</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    PrecisionClock Architecture · SwiftUI MVVM · iOS 16+ / macOS 13+ · Updated 2024
+  </footer>
+</body>
+</html>

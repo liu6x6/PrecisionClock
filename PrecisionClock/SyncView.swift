@@ -3,6 +3,7 @@ import SwiftUI
 struct SyncView: View {
     @StateObject private var ntpManager = NTPManager()
     @State private var showServerPicker = false
+    @State private var showNTPInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -13,6 +14,13 @@ struct SyncView: View {
                     .foregroundColor(.white)
 
                 Spacer()
+
+                // NTP 协议介绍按钮
+                Button(action: { showNTPInfo = true }) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
+                        .foregroundColor(.cyan.opacity(0.8))
+                }
 
                 refreshButton
             }
@@ -50,6 +58,10 @@ struct SyncView: View {
             .background(Color.black.ignoresSafeArea())
         }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showNTPInfo) {
+            NTPInfoView()
+                .preferredColorScheme(.dark)
+        }
     }
 
     private var refreshButton: some View {
@@ -209,26 +221,46 @@ struct ServerListSection: View {
     @ObservedObject var ntpManager: NTPManager
     @Binding var selectedId: String
 
+    private var groupedServers: [(NTPServer.ServerGroup, [NTPServer])] {
+        NTPServer.ServerGroup.allCases.map { group in
+            (group, NTPServer.allServers.filter { $0.group == group })
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("选择时钟源")
+            Text("选择时钟源（\(NTPServer.allServers.count) 个）")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.gray)
                 .padding(.leading, 4)
 
-            ForEach(NTPServer.allServers) { server in
-                ServerRow(
-                    server: server,
-                    measurement: ntpManager.measurements[server.id],
-                    isSelected: server.id == selectedId,
-                    onTap: {
-                        selectedId = server.id
-                        ntpManager.selectServer(server.id)
-                    },
-                    onMeasure: {
-                        Task { await ntpManager.measure(server: server) }
-                    }
-                )
+            ForEach(groupedServers, id: \.0) { group, servers in
+                // 分组标题
+                HStack(spacing: 6) {
+                    Image(systemName: group.icon)
+                        .font(.system(size: 10))
+                        .foregroundColor(.cyan.opacity(0.7))
+                    Text(group.rawValue)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.cyan.opacity(0.7))
+                }
+                .padding(.leading, 4)
+                .padding(.top, 4)
+
+                ForEach(servers) { server in
+                    ServerRow(
+                        server: server,
+                        measurement: ntpManager.measurements[server.id],
+                        isSelected: server.id == selectedId,
+                        onTap: {
+                            selectedId = server.id
+                            ntpManager.selectServer(server.id)
+                        },
+                        onMeasure: {
+                            Task { await ntpManager.measure(server: server) }
+                        }
+                    )
+                }
             }
         }
     }

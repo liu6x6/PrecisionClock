@@ -26,17 +26,25 @@
 
 ### 🌐 NTP 对时
 - 真实 **NTP 协议**（UDP 123 端口）实现
-- 支持 **10 个时钟源** 可选：
+- 支持 **21 个时钟源** 可选：
 
 | 时钟源 | 地址 | 区域 |
 |--------|------|------|
 | 🍎 Apple | time.apple.com | 美国 |
 | 🔵 Google | time.google.com | 全球 |
+| 🔵 Google 1~4 | time1~4.google.com | 全球 |
+| 🤖 Android | time.android.com | 全球 |
 | 🟠 Cloudflare | time.cloudflare.com | 全球 |
+| 📦 AWS | time.aws.com | 全球 |
+| 🪟 Microsoft | time.windows.com | 全球 |
+| 👤 Facebook | time.facebook.com | 全球 |
+| 🐧 Ubuntu | ntp.ubuntu.com | 全球 |
 | 🟡 阿里云 | ntp.aliyun.com | 中国 |
 | 🔷 腾讯云 | ntp.tencent.com | 中国 |
+| 🔬 国家授时中心 | ntp.ntsc.ac.cn | 中国 |
+| 🇨🇳 中国 NTP Pool | cn.ntp.org.cn | 中国 |
 | 🌏 Pool Asia | asia.pool.ntp.org | 亚洲 |
-| 🇨🇳 Pool China | cn.pool.ntp.org | 中国 |
+| 🏮 Pool China | cn.pool.ntp.org | 中国 |
 | 🇺🇸 US Naval Obs | time.nist.gov | 美国 |
 | 🇩🇪 PTB 德国 | ptbtime1.ptb.de | 德国 |
 | 🇯🇵 NICT 日本 | ntp.nict.jp | 日本 |

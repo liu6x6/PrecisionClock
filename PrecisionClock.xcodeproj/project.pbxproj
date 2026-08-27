@@ -17,6 +17,12 @@
 		AA000008 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AB000008 /* Preview Assets.xcassets */; };
 		AA000009 /* NTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000009 /* NTPClient.swift */; };
 		AA000010 /* AnalogClockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000010 /* AnalogClockView.swift */; };
+		AA000011 /* NTPInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000011 /* NTPInfoView.swift */; };
+		AA000012 /* DeviceSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000012 /* DeviceSyncManager.swift */; };
+		AA000013 /* DeviceSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000013 /* DeviceSyncView.swift */; };
+		AA000014 /* MultipeerConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB000014 /* MultipeerConnectivity.framework */; };
+		AA000015 /* CrossPlatformSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000015 /* CrossPlatformSyncManager.swift */; };
+		AA000016 /* CrossPlatformSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000016 /* CrossPlatformSyncView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +36,12 @@
 		AB000008 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		AB000009 /* NTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NTPClient.swift; sourceTree = "<group>"; };
 		AB000010 /* AnalogClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalogClockView.swift; sourceTree = "<group>"; };
+		AB000011 /* NTPInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NTPInfoView.swift; sourceTree = "<group>"; };
+		AB000012 /* DeviceSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSyncManager.swift; sourceTree = "<group>"; };
+		AB000013 /* DeviceSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSyncView.swift; sourceTree = "<group>"; };
+		AB000014 /* MultipeerConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MultipeerConnectivity.framework; path = System/Library/Frameworks/MultipeerConnectivity.framework; sourceTree = SDKROOT; };
+		AB000015 /* CrossPlatformSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrossPlatformSyncManager.swift; sourceTree = "<group>"; };
+		AB000016 /* CrossPlatformSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrossPlatformSyncView.swift; sourceTree = "<group>"; };
 		AC000001 /* PrecisionClock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrecisionClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -38,6 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA000014 /* MultipeerConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				AE000002 /* PrecisionClock */,
+				AE000004 /* Frameworks */,
 				AE000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +77,11 @@
 				AB000006 /* PrecisionTimer.swift */,
 				AB000009 /* NTPClient.swift */,
 				AB000010 /* AnalogClockView.swift */,
+				AB000011 /* NTPInfoView.swift */,
+				AB000012 /* DeviceSyncManager.swift */,
+				AB000013 /* DeviceSyncView.swift */,
+				AB000015 /* CrossPlatformSyncManager.swift */,
+				AB000016 /* CrossPlatformSyncView.swift */,
 				AB000007 /* Assets.xcassets */,
 				AB000008 /* Preview Assets.xcassets */,
 			);
@@ -75,6 +94,14 @@
 				AC000001 /* PrecisionClock.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AE000004 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AB000014 /* MultipeerConnectivity.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -156,6 +183,11 @@
 				AA000006 /* PrecisionTimer.swift in Sources */,
 				AA000009 /* NTPClient.swift in Sources */,
 				AA000010 /* AnalogClockView.swift in Sources */,
+				AA000011 /* NTPInfoView.swift in Sources */,
+				AA000012 /* DeviceSyncManager.swift in Sources */,
+				AA000013 /* DeviceSyncView.swift in Sources */,
+				AA000015 /* CrossPlatformSyncManager.swift in Sources */,
+				AA000016 /* CrossPlatformSyncView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

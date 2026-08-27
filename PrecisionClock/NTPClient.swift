@@ -9,18 +9,50 @@ struct NTPServer: Identifiable, Hashable {
     let host: String
     let flag: String
     let region: String
+    let group: ServerGroup
+
+    enum ServerGroup: String, CaseIterable {
+        case techGiants = "科技巨头"
+        case china = "中国"
+        case ntpPool = "NTP Pool"
+        case nationalLabs = "国家级计量机构"
+
+        var icon: String {
+            switch self {
+            case .techGiants: return "building.2"
+            case .china: return "flag.fill"
+            case .ntpPool: return "globe.asia.australia"
+            case .nationalLabs: return "star.fill"
+            }
+        }
+    }
 
     static let allServers: [NTPServer] = [
-        NTPServer(id: "apple",     name: "Apple",        host: "time.apple.com",        flag: "🍎", region: "美国"),
-        NTPServer(id: "google",    name: "Google",       host: "time.google.com",       flag: "🔵", region: "全球"),
-        NTPServer(id: "cloudflare",name: "Cloudflare",   host: "time.cloudflare.com",   flag: "🟠", region: "全球"),
-        NTPServer(id: "ntp.aliyun",name: "阿里云",       host: "ntp.aliyun.com",        flag: "🟡", region: "中国"),
-        NTPServer(id: "ntp.tencent",name: "腾讯云",      host: "ntp.tencent.com",       flag: "🔷", region: "中国"),
-        NTPServer(id: "pool_asia", name: "Pool Asia",    host: "asia.pool.ntp.org",     flag: "🌏", region: "亚洲"),
-        NTPServer(id: "pool_cn",   name: "Pool China",   host: "cn.pool.ntp.org",       flag: "🇨🇳", region: "中国"),
-        NTPServer(id: "usno",      name: "US Naval Obs", host: "time.nist.gov",         flag: "🇺🇸", region: "美国"),
-        NTPServer(id: "ptb",       name: "PTB 德国",     host: "ptbtime1.ptb.de",       flag: "🇩🇪", region: "德国"),
-        NTPServer(id: "nict",      name: "NICT 日本",    host: "ntp.nict.jp",           flag: "🇯🇵", region: "日本"),
+        // ─── 科技巨头 ───
+        NTPServer(id: "apple",      name: "Apple",         host: "time.apple.com",        flag: "🍎", region: "美国", group: .techGiants),
+        NTPServer(id: "google",     name: "Google",        host: "time.google.com",       flag: "🔵", region: "全球", group: .techGiants),
+        NTPServer(id: "google1",    name: "Google 1",      host: "time1.google.com",      flag: "🔵", region: "全球", group: .techGiants),
+        NTPServer(id: "google2",    name: "Google 2",      host: "time2.google.com",      flag: "🔵", region: "全球", group: .techGiants),
+        NTPServer(id: "google3",    name: "Google 3",      host: "time3.google.com",      flag: "🔵", region: "全球", group: .techGiants),
+        NTPServer(id: "google4",    name: "Google 4",      host: "time4.google.com",      flag: "🔵", region: "全球", group: .techGiants),
+        NTPServer(id: "android",    name: "Android",       host: "time.android.com",      flag: "🤖", region: "全球", group: .techGiants),
+        NTPServer(id: "cloudflare", name: "Cloudflare",    host: "time.cloudflare.com",   flag: "🟠", region: "全球", group: .techGiants),
+        NTPServer(id: "aws",        name: "AWS",           host: "time.aws.com",          flag: "📦", region: "全球", group: .techGiants),
+        NTPServer(id: "microsoft",  name: "Microsoft",     host: "time.windows.com",      flag: "🪟", region: "全球", group: .techGiants),
+        NTPServer(id: "facebook",   name: "Facebook",      host: "time.facebook.com",     flag: "👤", region: "全球", group: .techGiants),
+        NTPServer(id: "ubuntu",     name: "Ubuntu",        host: "ntp.ubuntu.com",        flag: "🐧", region: "全球", group: .techGiants),
+        // ─── 中国 ───
+        NTPServer(id: "ntp.aliyun",  name: "阿里云",       host: "ntp.aliyun.com",        flag: "🟡", region: "中国", group: .china),
+        NTPServer(id: "ntp.tencent", name: "腾讯云",       host: "ntp.tencent.com",       flag: "🔷", region: "中国", group: .china),
+        NTPServer(id: "ntsc",        name: "国家授时中心",  host: "ntp.ntsc.ac.cn",        flag: "🔬", region: "中国", group: .china),
+        NTPServer(id: "cn_ntp",      name: "中国 NTP Pool",host: "cn.ntp.org.cn",         flag: "🇨🇳", region: "中国", group: .china),
+        // ─── NTP Pool ───
+        NTPServer(id: "pool_asia",  name: "Pool Asia",     host: "asia.pool.ntp.org",     flag: "🌏", region: "亚洲", group: .ntpPool),
+        NTPServer(id: "pool_cn",    name: "Pool China",    host: "cn.pool.ntp.org",       flag: "🏮", region: "中国", group: .ntpPool),
+        // ─── 国家级计量机构 ───
+        NTPServer(id: "usno",       name: "US Naval Obs",  host: "time.nist.gov",         flag: "🇺🇸", region: "美国", group: .nationalLabs),
+        NTPServer(id: "ptb",        name: "PTB 德国",      host: "ptbtime1.ptb.de",       flag: "🇩🇪", region: "德国", group: .nationalLabs),
+        NTPServer(id: "nict",       name: "NICT 日本",     host: "ntp.nict.jp",           flag: "🇯🇵", region: "日本", group: .nationalLabs),
     ]
 }
 

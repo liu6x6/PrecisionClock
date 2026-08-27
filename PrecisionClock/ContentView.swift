@@ -34,6 +34,20 @@ struct ContentView: View {
                     Text("NTP对时")
                 }
                 .tag(3)
+
+            DeviceSyncView()
+                .tabItem {
+                    Image(systemName: "two.iphones")
+                    Text("设备对时")
+                }
+                .tag(4)
+
+            CrossPlatformSyncView()
+                .tabItem {
+                    Image(systemName: "arrow.left.arrow.right")
+                    Text("跨平台")
+                }
+                .tag(5)
         }
         .preferredColorScheme(.dark)
     }

@@ -146,13 +146,20 @@ ntpEpochDiff = 2208988800  // 1900→1970 的秒数差
 | `NTPManager` | ObservableObject，管理所有测量结果和选中服务器 |
 | `NTPMeasurement` | 单次测量结果（offset, rtt, ntpTime） |
 
-**可用时钟源**（10 个）：
+**可用时钟源**（21 个）：
 ```swift
 NTPServer.allServers: [
-    apple, google, cloudflare,       // 全球/美国
-    ntp.aliyun, ntp.tencent,         // 中国
-    pool_asia, pool_cn,              // 亚洲/中国池
-    usno, ptb, nict                  // 美国/德国/日本
+    // 科技巨头
+    apple, google, google1~4, android,  // Apple/Google/Android
+    cloudflare, aws, microsoft,         // Cloudflare/AWS/Microsoft
+    facebook, ubuntu,                   // Facebook/Ubuntu
+    // 中国
+    ntp.aliyun, ntp.tencent,            // 阿里云/腾讯云
+    ntsc, cn_ntp,                       // 国家授时中心/中国池
+    // NTP Pool
+    pool_asia, pool_cn,                 // 亚洲/中国池
+    // 国家级计量机构
+    usno, ptb, nict                     // 美国/德国/日本
 ]
 ```
 
